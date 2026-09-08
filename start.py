@@ -2,13 +2,12 @@
 # World War - Start Menu
 # ==============================
 
-# ارسال پیام از bot.py بعداً به این فایل وصل می‌شود
+import database
+
+
+# ارسال پیام از bot.py
 send_message = None
 edit_message = None
-
-# کشور انتخاب‌شده کاربران
-# فعلاً موقت است؛ بعداً به database.py وصل می‌شود
-user_countries = {}
 
 
 def setup(send_message_function, edit_message_function):
@@ -18,6 +17,10 @@ def setup(send_message_function, edit_message_function):
     send_message = send_message_function
     edit_message = edit_message_function
 
+
+# =========================
+# دکمه‌های انتخاب کشور
+# =========================
 
 def country_keyboard():
     return {
@@ -76,6 +79,10 @@ def country_keyboard():
     }
 
 
+# =========================
+# منوی اصلی
+# =========================
+
 def main_menu_keyboard():
     return {
         "inline_keyboard": [
@@ -102,6 +109,10 @@ def main_menu_keyboard():
     }
 
 
+# =========================
+# صفحه انتخاب کشور
+# =========================
+
 def show_country_selection(chat_id):
     if send_message is None:
         return
@@ -113,16 +124,20 @@ def show_country_selection(chat_id):
     )
 
 
-def show_main_menu(chat_id, country, message_id=None):
+# =========================
+# منوی اصلی
+# =========================
+
+def show_main_menu(chat_id, user, message_id=None):
     if send_message is None:
         return
 
     text = (
         "سلام فرمانده! 👋\n"
         "خوش برگشتی.\n\n"
-        f"🌍 کشور: {country}\n"
-        "💰 بودجه: 100,000\n"
-        "❤️ HP: 100%\n\n"
+        f"🌍 کشور: {user['country']}\n"
+        f"💰 بودجه: {user['budget']:,}\n"
+        f"❤️ HP: {user['hp']}%\n\n"
         "فرمانده، دستور بعدی را انتخاب کن:"
     )
 
@@ -141,11 +156,16 @@ def show_main_menu(chat_id, country, message_id=None):
         )
 
 
-def handle_update(update):
-    if send_message is None:
-        return
+# =========================
+# مدیریت آپدیت‌ها
+# =========================
 
+def handle_update(update):
+
+    # =========================
     # دریافت پیام
+    # =========================
+
     message = update.get("message")
 
     if message:
@@ -156,25 +176,48 @@ def handle_update(update):
         if not chat_id:
             return
 
+        # =========================
         # دستور /start
-        if text == "/start":
-            if chat_id not in user_countries:
-                show_country_selection(chat_id)
-            else:
-                show_main_menu(chat_id, user_countries[chat_id])
+        # =========================
 
-    # دریافت کلیک روی دکمه‌های شیشه‌ای
+        if text == "/start":
+
+            # گرفتن یا ساخت کاربر
+            user = database.get_or_create_user(chat_id)
+
+            # اگر کشور ندارد
+            if user["country"] is None:
+                show_country_selection(chat_id)
+
+            # اگر کشور دارد
+            else:
+                show_main_menu(
+                    chat_id,
+                    user
+                )
+
+    # =========================
+    # کلیک روی دکمه‌ها
+    # =========================
+
     callback_query = update.get("callback_query")
 
     if callback_query:
+
         data = callback_query.get("data")
+
         message = callback_query.get("message", {})
         chat = message.get("chat", {})
+
         chat_id = chat.get("id")
         message_id = message.get("message_id")
 
         if not chat_id:
             return
+
+        # =========================
+        # لیست کشورها
+        # =========================
 
         countries = {
             "country_iran": "ایران",
@@ -209,14 +252,28 @@ def handle_update(update):
             "country_qatar": "قطر"
         }
 
+        # =========================
         # انتخاب کشور
+        # =========================
+
         if data in countries:
+
             country = countries[data]
 
-            user_countries[chat_id] = country
+            # ذخیره کشور در دیتابیس
+            database.get_or_create_user(chat_id)
 
+            database.set_country(
+                chat_id,
+                country
+            )
+
+            # گرفتن اطلاعات جدید
+            user = database.get_user(chat_id)
+
+            # ویرایش همان پیام
             show_main_menu(
                 chat_id,
-                country,
+                user,
                 message_id
-            )
+                    )
