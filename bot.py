@@ -3,6 +3,7 @@ import time
 
 from config import BOT_TOKEN, API_URL
 
+import database
 
 # =========================
 # تنظیمات اصلی ربات
@@ -109,6 +110,7 @@ import start
 start.setup(send_message, edit_message)
 register_module(start)
 
+database.init_db()
 
 # =========================
 # اجرای ربات
