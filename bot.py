@@ -67,6 +67,23 @@ def send_message(chat_id, text, reply_markup=None):
 
 
 # =========================
+# ویرایش پیام
+# =========================
+
+def edit_message(chat_id, message_id, text, reply_markup=None):
+    data = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text
+    }
+
+    if reply_markup is not None:
+        data["reply_markup"] = reply_markup
+
+    return api_request("editMessageText", data)
+
+
+# =========================
 # سیستم اتصال فایل‌ها
 # =========================
 
@@ -89,7 +106,7 @@ def register_module(module):
 
 import start
 
-start.setup(send_message)
+start.setup(send_message, edit_message)
 register_module(start)
 
 
