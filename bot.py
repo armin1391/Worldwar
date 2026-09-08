@@ -84,6 +84,16 @@ def register_module(module):
 
 
 # =========================
+# اتصال ماژول Start
+# =========================
+
+import start
+
+start.setup(send_message)
+register_module(start)
+
+
+# =========================
 # اجرای ربات
 # =========================
 
